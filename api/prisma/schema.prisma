@@ -1,0 +1,322 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ユーザー
+model User {
+  id          String   @id @default(cuid())
+  deviceId    String?  @unique
+  deviceToken String?  @unique
+  age         Int?
+  height      Float?   // cm
+  weight      Float?   // kg (開始時)
+  bodyType    String?  // 体型
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  plans       Plan[]
+  dailyLogs   DailyLog[]
+  shoppingLists ShoppingList[]
+
+  @@map("users")
+}
+
+// 半年プラン
+model Plan {
+  id          String   @id @default(cuid())
+  userId      String
+  startDate   DateTime
+  endDate     DateTime
+  targetWeight Float   // 目標体重
+  currentWeight Float  // 開始時体重
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayPlans    DayPlan[]
+
+  @@map("plans")
+}
+
+// 特定日のプラン
+model DayPlan {
+  id          String   @id @default(cuid())
+  planId      String
+  date        DateTime @db.Date
+  dayType     String   // TRAINING_DAY, CARDIO_DAY, REST_DAY
+  dayOfWeek   Int      // 0=日, 1=月, ..., 6=土
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  plan        Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  mealPlan    MealPlan?
+  workoutPlan WorkoutPlan?
+  todoItems   TodoItem[]
+
+  @@unique([planId, date])
+  @@map("day_plans")
+}
+
+// 食事テンプレート（朝/昼/間食/トレ後/夜）
+model MealTemplate {
+  id          String   @id @default(cuid())
+  name        String   // 朝食, 昼食, 間食, トレ後, 夕食
+  mealType    String   // BREAKFAST, LUNCH, SNACK, POST_WORKOUT, DINNER
+  calories    Int      // カロリー範囲（最小）
+  caloriesMax Int?     // カロリー範囲（最大）
+  protein     Float?   // タンパク質（g）
+  fat         Float?   // 脂質（g）
+  carbs       Float?   // 炭水化物（g）
+  description String?  // 説明
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items       MealItem[]
+  mealPlans   MealPlan[]
+
+  @@map("meal_templates")
+}
+
+// 食事アイテム（テンプレート内の個別アイテム）
+model MealItem {
+  id              String   @id @default(cuid())
+  mealTemplateId  String
+  name            String   // 例: 鶏むね200g, プロテイン1杯
+  quantity        Float?   // 数量
+  unit            String?  // g, ml, piece, cup等
+  calories        Float?   // カロリー
+  protein         Float?   // タンパク質（g）
+  fat             Float?   // 脂質（g）
+  carbs           Float?   // 炭水化物（g）
+  alternatives    String?  // JSON形式で代替食材を保存
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  mealTemplate    MealTemplate @relation(fields: [mealTemplateId], references: [id], onDelete: Cascade)
+  ingredients     MealItemIngredient[]
+
+  @@map("meal_items")
+}
+
+// 食材マスタ
+model Ingredient {
+  id          String   @id @default(cuid())
+  name        String   // 鶏むね, 鮭, 卵等
+  category    String   // PROTEIN, VEGETABLE, CARB, OTHER
+  unit        String   // g, ml, piece, pack, bag, bottle, serving
+  caloriesPerUnit Float? // 単位あたりのカロリー
+  proteinPerUnit  Float? // 単位あたりのタンパク質
+  fatPerUnit      Float? // 単位あたりの脂質
+  carbsPerUnit    Float? // 単位あたりの炭水化物
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mealItems   MealItemIngredient[]
+  shoppingItems ShoppingListItem[]
+
+  @@unique([name, unit])
+  @@map("ingredients")
+}
+
+// メニューと食材の紐付け
+model MealItemIngredient {
+  id          String   @id @default(cuid())
+  mealItemId  String
+  ingredientId String
+  quantity    Float    // 数量
+  unit        String   // 単位
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mealItem    MealItem   @relation(fields: [mealItemId], references: [id], onDelete: Cascade)
+  ingredient  Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([mealItemId, ingredientId])
+  @@map("meal_item_ingredients")
+}
+
+// 特定日の食事プラン
+model MealPlan {
+  id          String   @id @default(cuid())
+  dayPlanId   String   @unique
+  mealTemplateId String
+  // override用のJSONフィールド（必要に応じて）
+  overrides   String?  // JSON形式で個別の変更を保存
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  dayPlan     DayPlan      @relation(fields: [dayPlanId], references: [id], onDelete: Cascade)
+  mealTemplate MealTemplate @relation(fields: [mealTemplateId], references: [id])
+
+  @@map("meal_plans")
+}
+
+// ワークアウトテンプレート（曜日別）
+model WorkoutTemplate {
+  id          String   @id @default(cuid())
+  dayOfWeek   Int      // 0=日, 1=月, ..., 6=土
+  name        String   // 例: 下半身①, Push, Pull
+  workoutType String   // TRAINING, CARDIO, REST
+  cardioMinutes Int?   // 有酸素時間（分）
+  cardioIntensity String? // 有酸素強度
+  description String?  // 説明
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  exercises   ExerciseTemplate[]
+  workoutPlans WorkoutPlan[]
+
+  @@unique([dayOfWeek])
+  @@map("workout_templates")
+}
+
+// 種目テンプレート
+model ExerciseTemplate {
+  id          String   @id @default(cuid())
+  workoutTemplateId String
+  name        String   // レッグプレス, チェストプレス等
+  sets        Int      // セット数
+  repsMin     Int?     // 最小回数
+  repsMax     Int?     // 最大回数
+  weight      Float?   // 推奨重量（kg）
+  restSeconds Int?     // 休憩時間（秒）
+  notes       String?  // メモ（RIR2、フォーム優先等）
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workoutTemplate WorkoutTemplate @relation(fields: [workoutTemplateId], references: [id], onDelete: Cascade)
+  exerciseLogs    ExerciseLog[]
+
+  @@map("exercise_templates")
+}
+
+// 特定日のワークアウトプラン
+model WorkoutPlan {
+  id          String   @id @default(cuid())
+  dayPlanId   String   @unique
+  workoutTemplateId String
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  dayPlan     DayPlan      @relation(fields: [dayPlanId], references: [id], onDelete: Cascade)
+  workoutTemplate WorkoutTemplate @relation(fields: [workoutTemplateId], references: [id])
+  exerciseLogs    ExerciseLog[]
+
+  @@map("workout_plans")
+}
+
+// 種目ログ（実績記録）
+model ExerciseLog {
+  id          String   @id @default(cuid())
+  workoutPlanId String
+  exerciseTemplateId String
+  weight      Float?   // 使用重量（kg）
+  reps        Int?     // 実績回数
+  sets        Int?     // 実績セット数
+  notes       String?  // メモ
+  completedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workoutPlan     WorkoutPlan     @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  exerciseTemplate ExerciseTemplate @relation(fields: [exerciseTemplateId], references: [id])
+
+  @@map("exercise_logs")
+}
+
+// Todoテンプレート
+model TodoTemplate {
+  id          String   @id @default(cuid())
+  name        String   // タスク名
+  description String?  // 説明
+  category    String   // DAILY, TRAINING_DAY, CARDIO_DAY, WEEKLY
+  time        String?  // 時刻（例: 07:30）
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  todoItems   TodoItem[]
+
+  @@map("todo_templates")
+}
+
+// Todoアイテム（特定日のタスク）
+model TodoItem {
+  id          String   @id @default(cuid())
+  dayPlanId   String
+  todoTemplateId String
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  dayPlan     DayPlan      @relation(fields: [dayPlanId], references: [id], onDelete: Cascade)
+  todoTemplate TodoTemplate @relation(fields: [todoTemplateId], references: [id])
+
+  @@map("todo_items")
+}
+
+// 日次ログ（体重、ウエスト等）
+model DailyLog {
+  id          String   @id @default(cuid())
+  userId      String
+  date        DateTime @db.Date
+  weight      Float?   // 体重（kg）
+  waist       Float?   // ウエスト（cm）
+  steps       Int?     // 歩数
+  sleepHours  Float?   // 睡眠時間（時間）
+  mealStatus  String?  // ACHIEVED, PARTIAL, MISSED
+  notes       String?  // メモ
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("daily_logs")
+}
+
+// 買い物リスト（週次）
+model ShoppingList {
+  id          String   @id @default(cuid())
+  userId      String
+  weekStart   DateTime @db.Date // 週の開始日（月曜日）
+  weekEnd     DateTime @db.Date // 週の終了日（日曜日）
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       ShoppingListItem[]
+
+  @@unique([userId, weekStart])
+  @@map("shopping_lists")
+}
+
+// 買い物リストアイテム
+model ShoppingListItem {
+  id          String   @id @default(cuid())
+  shoppingListId String
+  ingredientId String
+  quantity    Float    // 数量
+  unit        String   // 単位
+  purchased   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  shoppingList ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient   @relation(fields: [ingredientId], references: [id])
+
+  @@unique([shoppingListId, ingredientId])
+  @@map("shopping_list_items")
+}
