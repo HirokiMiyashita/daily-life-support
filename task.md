@@ -1,5 +1,5 @@
 # 減量プラン管理アプリ 要件定義 & データ仕様（半年-20kg / 朝ジムなし版）
-（React Native + Expo / Neon + Prisma / 個人利用・TestFlight配布）
+（React Native + Expo / Supabase / 個人利用・TestFlight配布）
 
 ---
 
@@ -31,8 +31,8 @@
   - Expo（EAS）でビルド
   - TestFlight 経由で **本人のiPhoneに配布して動作確認・利用**
 - 利用者は基本1人（本人）を想定
-- 認証は最小（端末固定運用ならログイン不要でも可）
-  - ただしDBをNeonに置く場合は「ユーザー識別」は必要（後述）
+- 認証は最小（Supabase Authで匿名認証 or Email認証）
+  - 個人利用でもSupabaseのRow Level Security (RLS)でセキュリティ確保
 
 ---
 
@@ -44,19 +44,28 @@
 - オフライン/キャッシュ（任意）：AsyncStorage（のちに追加）
 
 ### 4.2 バックエンド / DB
-- DB：Neon（PostgreSQL）
-- ORM：Prisma
+- DB：Supabase（PostgreSQL）
+- クライアント：Supabase JS Client（@supabase/supabase-js）
 - API：
-  - 方式A（推奨・個人利用でも安全）：APIサーバ（Next.js / Hono / Express等）経由でNeon接続
-  - 方式B（非推奨）：モバイルから直接Neonに接続（接続情報漏洩リスクが大きい）
-- 結論：**方式Aを採用**（EASで配布しても漏れにくい）
+  - Supabaseの自動生成REST APIを直接利用
+  - Row Level Security (RLS)でセキュリティポリシーを設定
+  - 必要に応じてEdge Functions（Deno）でカスタムロジック実装
+- 利点：
+  - 認証機能が組み込まれている（Supabase Auth）
+  - Realtime機能でリアルタイム同期が可能
+  - ストレージ機能で写真保存も可能
+  - スキーマ管理はSupabase Dashboard or マイグレーションSQL
 
 ### 4.3 認証（個人利用）
-- 最小構成：
-  - 端末初回起動時に `deviceId` を生成してUser紐づけ（ログイン不要）
-  - APIは `deviceToken`（ランダム文字列）で識別（DBに保存）
-- もっと簡単にするなら：
-  - シングルユーザー前提でUser 1固定にしてもOK（ただし将来拡張性は落ちる）
+- Supabase Authを利用：
+  - 方式A（推奨）：匿名認証（Anonymous Auth）
+    - 初回起動時に自動で匿名ユーザーを作成
+    - ログイン不要でシームレス
+  - 方式B：Email認証（将来的に複数デバイス対応する場合）
+    - メールアドレス + パスワード or Magic Link
+- RLS（Row Level Security）設定：
+  - 各テーブルにRLSを有効化
+  - ポリシー：`auth.uid() = user_id` で自分のデータのみアクセス可能
 
 ---
 
@@ -344,11 +353,19 @@
 
 ---
 
-## 13. Prisma（DBスキーマ）に落とす時の考慮（概要）
-- ExpoクライアントにPrismaは載らないため
-  - PrismaはAPIサーバ側で利用する
-- App → API（HTTPS）→ Prisma → Neon
-- “個人利用”でも、DB直叩きより事故が減る（接続情報漏洩しにくい）
+## 13. Supabase（DBスキーマ）に落とす時の考慮（概要）
+- スキーマ管理：
+  - Supabase DashboardのSQL Editorで直接実行
+  - またはマイグレーションファイル（SQL）を管理
+  - Prismaを使う場合も可（SupabaseはPostgreSQLなので互換性あり）
+- 接続方式：
+  - App → Supabase Client（HTTPS）→ Supabase REST API → PostgreSQL
+  - Supabase URLとAnon Keyは環境変数で管理（EAS Secrets）
+  - Service Role Keyは絶対にクライアントに含めない（サーバーサイドのみ）
+- セキュリティ：
+  - RLS（Row Level Security）で各テーブルのアクセス制御
+  - Anon Keyは公開されてもRLSで保護されるため安全
+  - "個人利用"でもRLSを設定することでセキュリティを確保
 
 ---
 
@@ -376,8 +393,11 @@
 - Expoアカウント / Apple Developer Program が必要（TestFlight利用のため）
 - ビルド手順はEASを想定
   - iOS build → TestFlight配布 → iPhoneで確認
-- 環境変数（API URLなど）は EAS Secrets / build profile で切替
-- DB接続情報は **絶対にアプリに埋め込まない**
-  - Prisma/Neon接続はサーバ側のみ
+- 環境変数（Supabase URL / Anon Key）は EAS Secrets / build profile で切替
+- セキュリティ：
+  - Supabase URLとAnon Keyは環境変数で管理（EAS Secrets）
+  - Anon Keyは公開されてもRLSで保護されるため安全
+  - Service Role Keyは**絶対にアプリに埋め込まない**（サーバーサイドのみ使用）
+  - RLSポリシーで各テーブルのアクセス制御を必ず設定
 
 ---

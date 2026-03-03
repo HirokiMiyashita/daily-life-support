@@ -1,146 +1,141 @@
 # 減量プラン管理アプリ
 
-「半年で-20kg」を達成するための毎日のやること（ToDo）・食事メニュー・ジムメニューを管理するアプリです。
+React Native + Expo + Supabaseで構築された減量プラン管理アプリです。
 
-## 技術スタック
+## 機能
 
-- **フロントエンド**: React Native (Expo)
-- **バックエンド**: Next.js (API Routes)
-- **データベース**: Neon (PostgreSQL)
-- **ORM**: Prisma
-- **状態管理**: React Query
-- **ナビゲーション**: React Navigation (Drawer)
+- **Today画面**: 今日のやることリスト、食事メニュー、ジムメニュー、目標サマリを表示
+- **体重ログ**: 毎朝の体重と週1回のウエストを記録
+- **買い物リスト**: 今週必要な食材をカテゴリ別に表示
+- **週間プラン**: 週間のプランを確認（今後実装予定）
 
-## プロジェクト構造
+## セットアップ
 
-```
-daily-life-support/
-├── app/          # Expo React Nativeアプリ
-├── api/          # Next.js APIサーバー
-└── task.md       # 要件定義書
-```
-
-## セットアップ手順
-
-### 1. データベースのセットアップ
-
-1. [Neon](https://neon.tech/)でPostgreSQLデータベースを作成
-2. `api/.env`ファイルを作成し、`DATABASE_URL`を設定：
-
-```env
-DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
-```
-
-### 2. APIサーバーのセットアップ
+### 1. 依存関係のインストール
 
 ```bash
-cd api
-npm install
-npx prisma generate
-npx prisma migrate dev --name init
-npm run db:seed
-npm run dev
-```
-
-APIサーバーは `http://localhost:3000` で起動します。
-
-### 3. Expoアプリのセットアップ
-
-```bash
-cd app
 npm install
 ```
 
-`.env`ファイルを作成し、API URLを設定：
+### 2. 環境変数の設定
 
-```env
-EXPO_PUBLIC_API_URL=http://localhost:3000
+`.env`ファイルを作成し、以下の環境変数を設定してください：
+
+```
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-開発サーバーを起動：
+### 3. Supabaseデータベースのセットアップ
+
+#### 3.1 マイグレーションの実行
+
+1. Supabase Dashboardにログイン
+2. SQL Editorを開く
+3. `supabase/migrations/001_initial_schema.sql`の内容をコピー＆ペースト
+4. 実行してテーブルとRLSポリシーを作成
+
+#### 3.2 匿名認証の有効化
+
+1. Supabase Dashboard → Authentication → Providers
+2. Anonymous を有効化
+
+#### 3.3 シードデータの実行
+
+1. SQL Editorを開く
+2. `supabase/seed.sql`の内容をコピー＆ペースト
+3. 実行して初期データを投入
+
+**注意**: シードデータは`seed_user_data()`関数として実装されています。初回ログイン時に自動的に実行されますが、手動で実行する場合は：
+
+```sql
+SELECT seed_user_data();
+```
+
+### 4. アプリの起動
 
 ```bash
 npm start
 ```
 
-### 4. 実機での動作確認
-
-1. Expo Goアプリをインストール（iOS/Android）
-2. 開発サーバー起動後、QRコードをスキャン
-3. または、`npm run ios` / `npm run android` でエミュレータで起動
-
-## 主な機能
-
-### P0（MVP）
-
-- ✅ Today画面（Todo + 食事 + ジムメニュー + 目標サマリ）
-- ✅ Shopping List画面（今週の食材リスト表示）
-- ✅ 曜日別ワークアウトテンプレート表示
-- ✅ 体重ログ（準備中）
-
-### P1（次期実装予定）
-
-- 週間ビュー
-- 種目ログ（重量/回数）
-- 7日平均（体重）
-- ShoppingListの購入チェック保存
-
-## データベーススキーマ
-
-主要なエンティティ：
-
-- `User` - ユーザー情報
-- `Plan` - 半年プラン
-- `DayPlan` - 特定日のプラン
-- `MealTemplate` / `MealPlan` / `MealItem` - 食事関連
-- `WorkoutTemplate` / `WorkoutPlan` / `ExerciseTemplate` - ワークアウト関連
-- `TodoTemplate` / `TodoItem` - Todo関連
-- `DailyLog` - 日次ログ（体重、ウエスト等）
-- `Ingredient` / `MealItemIngredient` - 食材関連
-- `ShoppingList` / `ShoppingListItem` - 買い物リスト
-
-詳細は `api/prisma/schema.prisma` を参照してください。
-
-## 開発コマンド
-
-### APIサーバー
+iOSシミュレーターで起動する場合：
 
 ```bash
-cd api
-npm run dev          # 開発サーバー起動
-npm run db:seed      # シードデータ投入
-npm run db:studio    # Prisma Studio起動
-npm run db:migrate   # マイグレーション実行
+npm run ios
 ```
 
-### Expoアプリ
+Androidエミュレーターで起動する場合：
 
 ```bash
-cd app
-npm start            # 開発サーバー起動
-npm run ios          # iOSエミュレータで起動
-npm run android      # Androidエミュレータで起動
+npm run android
 ```
 
-## 環境変数
+## プロジェクト構造
 
-### APIサーバー (`api/.env`)
-
-```env
-DATABASE_URL="postgresql://..."
+```
+daily-life-support/
+├── app/                    # Expo Router 画面
+│   ├── (tabs)/            # タブナビゲーション
+│   │   ├── today.tsx      # Today画面
+│   │   ├── week.tsx       # 週間ビュー
+│   │   ├── logs.tsx       # 記録画面
+│   │   └── shopping-list.tsx # 買い物リスト
+│   └── _layout.tsx         # ルートレイアウト
+├── components/             # 再利用可能なコンポーネント
+│   ├── TodoList.tsx
+│   ├── MealPlan.tsx
+│   ├── WorkoutPlan.tsx
+│   └── ShoppingList.tsx
+├── hooks/                  # カスタムフック
+│   ├── useDayPlan.ts
+│   ├── useTodoItems.ts
+│   ├── useMealPlan.ts
+│   ├── useWorkoutPlan.ts
+│   ├── useDailyLog.ts
+│   └── useShoppingList.ts
+├── lib/                    # ライブラリ設定
+│   └── supabase.ts         # Supabaseクライアント
+├── supabase/               # データベース関連
+│   ├── migrations/         # マイグレーションファイル
+│   └── seed.sql            # シードデータ
+└── types/                  # TypeScript型定義
+    └── database.types.ts
 ```
 
-### Expoアプリ (`app/.env`)
+## 技術スタック
 
-```env
-EXPO_PUBLIC_API_URL=http://localhost:3000
-```
+- **React Native**: モバイルアプリ開発
+- **Expo**: 開発環境とビルドツール
+- **Expo Router**: ファイルベースルーティング
+- **Supabase**: バックエンド（PostgreSQL + Auth + REST API）
+- **React Query**: データフェッチングとキャッシュ
+- **TypeScript**: 型安全性
 
-## 注意事項
+## 開発メモ
 
-- 個人利用を想定したアプリです（ストア公開なし）
-- 最終的にはEASでビルドし、TestFlight経由で配布予定
-- DB接続情報は絶対にアプリに埋め込まない（APIサーバー経由のみ）
+### 認証
+
+アプリは匿名認証を使用しています。初回起動時に自動的に匿名ユーザーが作成され、シードデータが投入されます。
+
+### データベース
+
+- すべてのテーブルにRow Level Security (RLS)が設定されています
+- ユーザーは自分のデータのみアクセス可能
+- `auth.uid() = user_id`のポリシーで保護されています
+
+### 環境変数
+
+Expoでは環境変数に`EXPO_PUBLIC_`プレフィックスが必要です。これにより、クライアント側でアクセス可能になります。
+
+## 今後の実装予定
+
+- [ ] 週間ビューの詳細実装
+- [ ] 種目ログ（重量/回数/セット）の入力機能
+- [ ] 体重の7日平均計算
+- [ ] 買い物リストの購入チェック保存機能
+- [ ] 停滞検知＆提案機能
+- [ ] 食材代替の週次適用
+- [ ] ヘルス連携（歩数・睡眠）
 
 ## ライセンス
 

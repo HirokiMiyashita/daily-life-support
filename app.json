@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "daily-life-support",
+    "slug": "daily-life-support",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dailylifesupport.app",
+      "buildNumber": "1"
+    },
+    "android": {
+      "package": "com.dailylifesupport.app"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "scheme": "daily-life-support",
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
+}
+
