@@ -2,8 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
 export function useWorkoutPlan(dayType?: string) {
+  const dayOfWeek = new Date().getDay()-1;
+  // DB stores day_of_week as 0-6 (0: Sunday, 1: Monday, ...).
+  const dbDayOfWeek = dayOfWeek;
+
   return useQuery({
-    queryKey: ['workoutPlan', dayType],
+    queryKey: ['workoutPlan', dayType, dbDayOfWeek],
     queryFn: async () => {
       if (!dayType || dayType === 'REST_DAY') return null;
 
@@ -11,10 +15,6 @@ export function useWorkoutPlan(dayType?: string) {
       if (!user) {
         throw new Error('User not authenticated');
       }
-
-      const dayOfWeek = new Date().getDay();
-      // Convert Sunday (0) to 7 for database (Monday = 1)
-      const dbDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
 
       const { data: workoutTemplate, error } = await supabase
         .from('workout_templates')
@@ -29,7 +29,8 @@ export function useWorkoutPlan(dayType?: string) {
         `)
         .eq('user_id', user.id)
         .eq('day_of_week', dbDayOfWeek)
-        .single();
+        .order('order_index', { foreignTable: 'workout_plan_exercises', ascending: true })
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         throw error;

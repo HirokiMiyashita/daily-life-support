@@ -67,7 +67,7 @@ export interface Database {
           user_id: string;
           plan_id: string | null;
           date: string;
-          day_type: 'TRAINING_DAY' | 'CARDIO_DAY' | 'REST_DAY';
+          day_type: 'TRAINING_DAY' | 'CARDIO_DAY' | 'HYBRID_DAY' | 'REST_DAY';
           created_at: string;
           updated_at: string;
         };
@@ -76,7 +76,7 @@ export interface Database {
           user_id: string;
           plan_id?: string | null;
           date: string;
-          day_type: 'TRAINING_DAY' | 'CARDIO_DAY' | 'REST_DAY';
+          day_type: 'TRAINING_DAY' | 'CARDIO_DAY' | 'HYBRID_DAY' | 'REST_DAY';
           created_at?: string;
           updated_at?: string;
         };
@@ -85,7 +85,7 @@ export interface Database {
           user_id?: string;
           plan_id?: string | null;
           date?: string;
-          day_type?: 'TRAINING_DAY' | 'CARDIO_DAY' | 'REST_DAY';
+          day_type?: 'TRAINING_DAY' | 'CARDIO_DAY' | 'HYBRID_DAY' | 'REST_DAY';
           created_at?: string;
           updated_at?: string;
         };

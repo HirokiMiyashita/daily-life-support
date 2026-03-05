@@ -27,6 +27,7 @@ export function useTodoItems(dayPlanId?: string) {
       const dayTypes = ['DAILY'];
       if (dayPlan.day_type === 'TRAINING_DAY') dayTypes.push('TRAINING_DAY');
       if (dayPlan.day_type === 'CARDIO_DAY') dayTypes.push('CARDIO_DAY');
+      if (dayPlan.day_type === 'HYBRID_DAY') dayTypes.push('TRAINING_DAY', 'CARDIO_DAY');
 
       const { data: templates } = await supabase
         .from('todo_templates')

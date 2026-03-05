@@ -11,6 +11,9 @@ interface ExerciseTemplate {
 
 interface WorkoutPlanExercise {
   exercise_templates: ExerciseTemplate;
+  target_sets: number | null;
+  target_reps_min: number | null;
+  target_reps_max: number | null;
   order_index: number;
 }
 
@@ -24,21 +27,28 @@ interface WorkoutPlanProps {
 }
 
 export function WorkoutPlan({ workoutPlan }: WorkoutPlanProps) {
+  const orderedExercises = [...(workoutPlan.workout_plan_exercises || [])].sort(
+    (a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)
+  );
+
   return (
     <View style={styles.container}>
-      {workoutPlan.workout_plan_exercises && workoutPlan.workout_plan_exercises.length > 0 && (
+      {orderedExercises.length > 0 && (
         <View style={styles.exercisesContainer}>
-          {workoutPlan.workout_plan_exercises.map((exercisePlan) => {
+          {orderedExercises.map((exercisePlan) => {
             const exercise = exercisePlan.exercise_templates;
-            const repsText = exercise.target_reps_min === exercise.target_reps_max
-              ? `${exercise.target_reps_min}回`
-              : `${exercise.target_reps_min}〜${exercise.target_reps_max}回`;
+            const targetSets = exercisePlan.target_sets ?? exercise.target_sets;
+            const targetRepsMin = exercisePlan.target_reps_min ?? exercise.target_reps_min;
+            const targetRepsMax = exercisePlan.target_reps_max ?? exercise.target_reps_max;
+            const repsText = targetRepsMin === targetRepsMax
+              ? `${targetRepsMin ?? '-'}回`
+              : `${targetRepsMin ?? '-'}〜${targetRepsMax ?? '-'}回`;
             
             return (
-              <View key={exercise.id} style={styles.exerciseItem}>
+              <View key={`${exercise.id}-${exercisePlan.order_index}`} style={styles.exerciseItem}>
                 <Text style={styles.exerciseName}>{exercise.name}</Text>
                 <Text style={styles.exerciseDetails}>
-                  {exercise.target_sets}セット × {repsText}
+                  {targetSets ?? '-'}セット × {repsText}
                 </Text>
               </View>
             );

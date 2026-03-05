@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, Text, View, StyleSheet } from 'react-native';
 
 interface MealItem {
@@ -33,34 +33,12 @@ const mealTypeLabels: Record<string, string> = {
   DINNER: '夕食',
 };
 
-const mealCalorieRanges: Record<string, string> = {
-  BREAKFAST: '200-250kcal',
-  LUNCH: '500-550kcal',
-  SNACK: '100-150kcal',
-  POST_WORKOUT: '150-200kcal',
-  DINNER: '400-450kcal',
-};
-
 export function MealPlan({ mealPlan }: MealPlanProps) {
-  const mealTypeOrder = ['BREAKFAST', 'LUNCH', 'SNACK', 'POST_WORKOUT', 'DINNER'];
-  const [openMealTypes, setOpenMealTypes] = useState<Record<string, boolean>>({
-    BREAKFAST: true,
-    LUNCH: false,
-    SNACK: false,
-    POST_WORKOUT: false,
-    DINNER: false,
-  });
+  const [openMealTypes, setOpenMealTypes] = useState<Record<string, boolean>>({});
 
-  const mealPlanByType = useMemo(() => {
-    const map: Record<string, MealTemplate | undefined> = {};
-    mealPlan.forEach((plan) => {
-      const template = plan.meal_templates;
-      if (template?.meal_type) {
-        map[template.meal_type] = template;
-      }
-    });
-    return map;
-  }, [mealPlan]);
+  if (!mealPlan?.length) {
+    return <Text style={styles.emptyText}>メニュー未設定</Text>;
+  }
 
   const toggleMealType = (mealType: string) => {
     setOpenMealTypes((prev) => ({
@@ -71,10 +49,10 @@ export function MealPlan({ mealPlan }: MealPlanProps) {
 
   return (
     <View style={styles.container}>
-      {mealTypeOrder.map((mealTypeKey) => {
-        const template = mealPlanByType[mealTypeKey];
-        const mealType = mealTypeLabels[mealTypeKey] || mealTypeKey;
-        const calorieRange = mealCalorieRanges[mealTypeKey] || '';
+      {mealPlan.map((plan, index) => {
+        const template = plan.meal_templates;
+        const mealTypeKey = template?.meal_type || `UNKNOWN_${index}`;
+        const mealType = mealTypeLabels[template?.meal_type] || template?.name || '未分類';
         const isOpen = !!openMealTypes[mealTypeKey];
         const hasItems = !!template?.meal_items?.length;
 
@@ -83,7 +61,7 @@ export function MealPlan({ mealPlan }: MealPlanProps) {
             <Pressable style={styles.mealHeader} onPress={() => toggleMealType(mealTypeKey)}>
               <Text style={styles.mealType}>{mealType}</Text>
               <View style={styles.headerRight}>
-                {calorieRange ? <Text style={styles.mealCalories}>{calorieRange}</Text> : null}
+                {template?.calories ? <Text style={styles.mealCalories}>{template.calories}kcal</Text> : null}
                 <Text style={styles.chevron}>{isOpen ? '▲' : '▼'}</Text>
               </View>
             </Pressable>

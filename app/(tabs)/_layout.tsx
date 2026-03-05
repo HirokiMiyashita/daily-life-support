@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { ListChecks, Calendar, TrendingDown, ShoppingCart } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TabsLayout() {
   return (
@@ -27,7 +27,7 @@ export default function TabsLayout() {
         options={{
           title: '今日',
           tabBarIcon: ({ color, size = 24 }) => (
-            <ListChecks size={size || 24} color={color} />
+            <Ionicons name="list-outline" size={size || 24} color={color} />
           ),
         }}
       />
@@ -36,7 +36,7 @@ export default function TabsLayout() {
         options={{
           title: '週間',
           tabBarIcon: ({ color, size = 24 }) => (
-            <Calendar size={size || 24} color={color} />
+            <Ionicons name="calendar-outline" size={size || 24} color={color} />
           ),
         }}
       />
@@ -45,7 +45,7 @@ export default function TabsLayout() {
         options={{
           title: '記録',
           tabBarIcon: ({ color, size = 24 }) => (
-            <TrendingDown size={size || 24} color={color} />
+            <Ionicons name="trending-down-outline" size={size || 24} color={color} />
           ),
         }}
       />
@@ -54,7 +54,7 @@ export default function TabsLayout() {
         options={{
           title: '買物',
           tabBarIcon: ({ color, size = 24 }) => (
-            <ShoppingCart size={size || 24} color={color} />
+            <Ionicons name="cart-outline" size={size || 24} color={color} />
           ),
         }}
       />

@@ -4,11 +4,13 @@ import { useWeekPlans } from '@/hooks/useWeekPlans';
 import { useRouter } from 'expo-router';
 import { TopRightMenu } from '@/components/TopRightMenu';
 import { ScreenLoader } from '@/components/ScreenLoader';
+import { commonStyles } from '@/styles/common';
 
 const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
 const dayTypeLabels: Record<string, string> = {
-  TRAINING_DAY: 'トレーニング日',
-  CARDIO_DAY: '有酸素日',
+  TRAINING_DAY: '筋トレ中心日',
+  CARDIO_DAY: '有酸素中心日',
+  HYBRID_DAY: '筋トレ＋有酸素日',
   REST_DAY: '休養日',
 };
 
@@ -37,10 +39,6 @@ export default function WeekScreen() {
     };
   });
 
-  const getDayPlan = (date: string) => {
-    return weekPlans?.find(dp => dp.date === date);
-  };
-
   const handleDayPress = (date: string) => {
     // Navigate to today screen with date parameter
     // For now, just show the date
@@ -55,113 +53,110 @@ export default function WeekScreen() {
       <TopRightMenu />
       <ScrollView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>週間プラン</Text>
-          <Text style={styles.subtitle}>
+          <Text style={commonStyles.title}>週間プラン</Text>
+          <Text style={commonStyles.subtitle}>
             {weekDays[0].dateObj.getMonth() + 1}月{weekDays[0].dateObj.getDate()}日 〜 {weekDays[6].dateObj.getMonth() + 1}月{weekDays[6].dateObj.getDate()}日
           </Text>
         </View>
 
       <View style={styles.daysContainer}>
-        {weekDays.map((day) => {
-          const dayPlan = getDayPlan(day.date);
-          const isToday = day.date === new Date().toISOString().split('T')[0];
+        {(!weekPlans || weekPlans.length === 0) && (
+          <View style={[commonStyles.card, styles.emptyCard]}>
+            <Text style={commonStyles.sectionTitle}>今日のプラン</Text>
+            <Text style={styles.emptyText}>週間プランが未設定です</Text>
+            <TouchableOpacity style={styles.createButton} onPress={() => router.push('/create-plan')}>
+              <Text style={styles.createButtonText}>作成する</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        {(weekPlans || []).map((dayPlan) => {
+          const dateObj = new Date(dayPlan.date);
+          const isToday = dayPlan.date === new Date().toISOString().split('T')[0];
+          const dayName = dayNames[dateObj.getDay()];
 
           return (
             <TouchableOpacity
-              key={day.date}
-              style={[styles.dayCard, isToday && styles.dayCardToday]}
-              onPress={() => handleDayPress(day.date)}
+              key={dayPlan.id}
+              style={[commonStyles.card, styles.dayCard, isToday && styles.dayCardToday]}
+              onPress={() => handleDayPress(dayPlan.date)}
             >
-              <Text style={styles.dayName}>{day.dayName}</Text>
+              <Text style={styles.dayName}>{dayName}</Text>
               <Text style={styles.dayDate}>
-                {day.dateObj.getMonth() + 1}/{day.dateObj.getDate()}
+                {dateObj.getMonth() + 1}/{dateObj.getDate()}
               </Text>
-              {dayPlan && (
-                <View style={styles.dayTypeContainer}>
-                  <Text style={[
-                    styles.dayType,
-                    dayPlan.day_type === 'TRAINING_DAY' && styles.dayTypeTRAINING_DAY,
-                    dayPlan.day_type === 'CARDIO_DAY' && styles.dayTypeCARDIO_DAY,
-                    dayPlan.day_type === 'REST_DAY' && styles.dayTypeREST_DAY,
-                  ]}>
-                    {dayTypeLabels[dayPlan.day_type]}
-                  </Text>
-                </View>
-              )}
-              {!dayPlan && (
-                <Text style={styles.dayTypePlaceholder}>未設定</Text>
-              )}
+              <View style={styles.dayTypeContainer}>
+                <Text style={[
+                  styles.dayType,
+                  dayPlan.day_type === 'TRAINING_DAY' && styles.dayTypeTRAINING_DAY,
+                  dayPlan.day_type === 'CARDIO_DAY' && styles.dayTypeCARDIO_DAY,
+                  dayPlan.day_type === 'HYBRID_DAY' && styles.dayTypeHYBRID_DAY,
+                  dayPlan.day_type === 'REST_DAY' && styles.dayTypeREST_DAY,
+                ]}>
+                  {dayTypeLabels[dayPlan.day_type]}
+                </Text>
+              </View>
             </TouchableOpacity>
           );
         })}
       </View>
 
-      <View style={styles.infoSection}>
-        <Text style={styles.infoTitle}>週間サマリ</Text>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>トレーニング日:</Text>
-          <Text style={styles.summaryValue}>
-            {weekPlans?.filter(dp => dp.day_type === 'TRAINING_DAY').length || 0}日
-          </Text>
+      {(weekPlans || []).length > 0 && (
+        <View style={[commonStyles.card, styles.infoSection]}>
+          <Text style={[commonStyles.sectionTitle, styles.infoTitle]}>週間サマリ</Text>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>筋トレ中心日:</Text>
+            <Text style={styles.summaryValue}>
+              {weekPlans?.filter(dp => dp.day_type === 'TRAINING_DAY').length || 0}日
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>有酸素中心日:</Text>
+            <Text style={styles.summaryValue}>
+              {weekPlans?.filter(dp => dp.day_type === 'CARDIO_DAY').length || 0}日
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>筋トレ＋有酸素日:</Text>
+            <Text style={styles.summaryValue}>
+              {weekPlans?.filter(dp => dp.day_type === 'HYBRID_DAY').length || 0}日
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>休養日:</Text>
+            <Text style={styles.summaryValue}>
+              {weekPlans?.filter(dp => dp.day_type === 'REST_DAY').length || 0}日
+            </Text>
+          </View>
         </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>有酸素日:</Text>
-          <Text style={styles.summaryValue}>
-            {weekPlans?.filter(dp => dp.day_type === 'CARDIO_DAY').length || 0}日
-          </Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>休養日:</Text>
-          <Text style={styles.summaryValue}>
-            {weekPlans?.filter(dp => dp.day_type === 'REST_DAY').length || 0}日
-          </Text>
-        </View>
-      </View>
+      )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    paddingTop: 16,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    backgroundColor: '#f5f5f5',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
+  safeArea: commonStyles.safeArea,
+  container: commonStyles.screen,
+  header: commonStyles.headerContainer,
   daysContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
     gap: 12,
   },
+  emptyCard: {
+    marginTop: 16,
+  },
+  emptyText: {
+    ...commonStyles.mutedText,
+    marginBottom: 10,
+  },
+  createButton: commonStyles.buttonPrimary,
+  createButtonText: commonStyles.buttonPrimaryText,
   dayCard: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    marginTop: 4,
   },
   dayCardToday: {
-    backgroundColor: '#e3f2fd',
-    borderColor: '#2196F3',
+    backgroundColor: '#fff',
+    borderColor: '#FF6B35',
     borderWidth: 2,
   },
   dayName: {
@@ -193,23 +188,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#e8f5e9',
     color: '#2e7d32',
   },
+  dayTypeHYBRID_DAY: {
+    backgroundColor: '#e3f2fd',
+    color: '#1565c0',
+  },
   dayTypeREST_DAY: {
     backgroundColor: '#f3e5f5',
     color: '#7b1fa2',
   },
-  dayTypePlaceholder: {
-    fontSize: 14,
-    color: '#999',
-    fontStyle: 'italic',
-  },
   infoSection: {
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-    marginTop: 8,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 20,
   },
   infoTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
     marginBottom: 12,
   },
   summaryRow: {

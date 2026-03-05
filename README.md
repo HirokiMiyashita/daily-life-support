@@ -1,6 +1,7 @@
 # 減量プラン管理アプリ
 
-React Native + Expo + Supabaseで構築された減量プラン管理アプリです。
+React Native + Expo + Supabaseで構築された減量プラン管理アプリです。  
+加えて、LLM連携用のGo API（Docker起動）を同一リポジトリで管理します。
 
 ## 機能
 
@@ -40,13 +41,13 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 1. Supabase Dashboard → Authentication → Providers
 2. Anonymous を有効化
 
-#### 3.3 シードデータの実行
+#### 3.3 （任意）シードデータの実行
 
 1. SQL Editorを開く
 2. `supabase/seed.sql`の内容をコピー＆ペースト
-3. 実行して初期データを投入
+3. 実行してサンプルデータを投入
 
-**注意**: シードデータは`seed_user_data()`関数として実装されています。初回ログイン時に自動的に実行されますが、手動で実行する場合は：
+**注意**: 現在のアプリフローでは`seed_user_data()`は自動実行されません。必要な場合のみ手動で実行してください。
 
 ```sql
 SELECT seed_user_data();
@@ -70,10 +71,94 @@ Androidエミュレーターで起動する場合：
 npm run android
 ```
 
+## Go API（LLM用）起動
+
+### 1. API環境変数を作成
+
+`apps/api/.env.example` をコピーして `apps/api/.env` を作成し、値を設定します。
+
+```bash
+cp apps/api/.env.example apps/api/.env
+```
+
+最低限 `OPENAI_API_KEY` を設定してください。
+
+### 2. DockerでAPIを起動
+
+```bash
+npm run docker:up
+```
+
+停止:
+
+```bash
+npm run docker:down
+```
+
+ログ確認:
+
+```bash
+npm run api:logs
+```
+
+### 3. 動作確認
+
+```bash
+curl http://localhost:8080/health
+```
+
+LLMエンドポイント:
+
+- `POST http://localhost:8080/v1/llm/chat`
+- body例:
+
+```json
+{
+  "messages": [
+    { "role": "system", "content": "You are a helpful assistant." },
+    { "role": "user", "content": "今日の食事の提案をして" }
+  ]
+}
+```
+
+### 4. Swagger/OpenAPI生成
+
+Goコードコメントから OpenAPI を生成できます。
+
+```bash
+npm run api:swagger
+```
+
+生成物:
+
+- `apps/api/internal/docs/swagger.json`
+- `apps/api/internal/docs/swagger.yaml`
+
+Swagger UI:
+
+- `http://localhost:8080/swagger/index.html`
+
+### 5. React Native用クライアント生成（orval）
+
+```bash
+npm run api:client:generate
+```
+
+生成先:
+
+- `lib/generated/llmApi.ts`
+
+React Native側は生成された関数を呼ぶだけでAPIを実行できます。
+
 ## プロジェクト構造
 
 ```
 daily-life-support/
+├── apps/
+│   └── api/                 # Go API（LLM連携）
+│       ├── cmd/server/main.go
+│       ├── Dockerfile
+│       └── .env.example
 ├── app/                    # Expo Router 画面
 │   ├── (tabs)/            # タブナビゲーション
 │   │   ├── today.tsx      # Today画面
@@ -98,6 +183,8 @@ daily-life-support/
 ├── supabase/               # データベース関連
 │   ├── migrations/         # マイグレーションファイル
 │   └── seed.sql            # シードデータ
+├── infra/
+│   └── docker-compose.yml  # Go API起動定義
 └── types/                  # TypeScript型定義
     └── database.types.ts
 ```
@@ -108,6 +195,8 @@ daily-life-support/
 - **Expo**: 開発環境とビルドツール
 - **Expo Router**: ファイルベースルーティング
 - **Supabase**: バックエンド（PostgreSQL + Auth + REST API）
+- **Go**: LLM用APIサーバー
+- **Docker**: Go APIのローカル起動
 - **React Query**: データフェッチングとキャッシュ
 - **TypeScript**: 型安全性
 
@@ -115,7 +204,7 @@ daily-life-support/
 
 ### 認証
 
-アプリは匿名認証を使用しています。初回起動時に自動的に匿名ユーザーが作成され、シードデータが投入されます。
+アプリは匿名認証を使用しています。初回起動時に匿名ユーザーが作成されます。週間プランと食事メニューはアプリ内の作成フローで登録します。
 
 ### データベース
 

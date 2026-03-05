@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MoreVertical } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 
 export function TopRightMenu() {
@@ -45,7 +44,7 @@ export function TopRightMenu() {
         accessibilityRole="button"
         accessibilityLabel="メニューを開く"
       >
-        <MoreVertical size={22} color="#333" />
+        <Text style={styles.iconText}>⋮</Text>
       </Pressable>
 
       <Modal transparent visible={visible} animationType="fade" onRequestClose={closeMenu}>
@@ -90,6 +89,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 3,
     elevation: 3,
+  },
+  iconText: {
+    fontSize: 22,
+    lineHeight: 22,
+    color: '#333',
+    fontWeight: '700',
   },
   backdrop: {
     flex: 1,

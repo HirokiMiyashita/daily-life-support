@@ -1,0 +1,128 @@
+basePath: /
+definitions:
+  httphandler.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  llm.ChatInput:
+    properties:
+      messages:
+        items:
+          $ref: '#/definitions/llm.Message'
+        type: array
+      model:
+        type: string
+      temperature:
+        type: number
+    type: object
+  llm.ChatOutput:
+    properties:
+      message:
+        type: string
+      model:
+        type: string
+    type: object
+  llm.Message:
+    properties:
+      content:
+        type: string
+      role:
+        type: string
+    type: object
+  llm.OnboardingPlanInput:
+    properties:
+      heightCm:
+        type: number
+      targetDurationUnit:
+        description: week or month
+        type: string
+      targetDurationValue:
+        type: integer
+      targetWeightKg:
+        type: number
+      weightKg:
+        type: number
+    type: object
+info:
+  contact: {}
+  description: LLM gateway API for the mobile app.
+  title: Daily Life Support API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: APIのヘルスチェック
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - health
+  /v1/llm/chat:
+    post:
+      consumes:
+      - application/json
+      description: LLMにチャットリクエストを送信
+      parameters:
+      - description: Chat request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/llm.ChatInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/llm.ChatOutput'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httphandler.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/httphandler.ErrorResponse'
+      summary: LLM chat
+      tags:
+      - llm
+  /v1/llm/onboarding-plan:
+    post:
+      consumes:
+      - application/json
+      description: オンボーディング入力値からAI提案を生成
+      parameters:
+      - description: Onboarding plan request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/llm.OnboardingPlanInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/llm.ChatOutput'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httphandler.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/httphandler.ErrorResponse'
+      summary: Onboarding suggestion
+      tags:
+      - llm
+swagger: "2.0"

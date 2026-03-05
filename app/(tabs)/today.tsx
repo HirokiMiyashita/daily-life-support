@@ -1,5 +1,6 @@
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useDayPlan } from '@/hooks/useDayPlan';
 import { useTodoItems } from '@/hooks/useTodoItems';
 import { useMealPlan } from '@/hooks/useMealPlan';
@@ -8,8 +9,10 @@ import { MealPlan } from '@/components/MealPlan';
 import { WorkoutPlan } from '@/components/WorkoutPlan';
 import { TopRightMenu } from '@/components/TopRightMenu';
 import { ScreenLoader } from '@/components/ScreenLoader';
+import { commonStyles } from '@/styles/common';
 
 export default function TodayScreen() {
+  const router = useRouter();
   const { data: dayPlan, isLoading: dayPlanLoading } = useDayPlan();
   const { data: todos, isLoading: todosLoading } = useTodoItems(dayPlan?.id);
   const { data: mealPlan, isLoading: mealPlanLoading } = useMealPlan(dayPlan?.id);
@@ -21,11 +24,13 @@ export default function TodayScreen() {
 
   const today = new Date();
   const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
-  const dayName = dayNames[today.getDay()];
+  const dayName = dayNames[today.getDay()-1];
 
   const getDayTypeLabel = () => {
-    if (dayPlan?.day_type === 'TRAINING_DAY') return 'トレーニング日';
-    if (dayPlan?.day_type === 'CARDIO_DAY') return '有酸素日';
+    if (!dayPlan) return '';
+    if (dayPlan?.day_type === 'TRAINING_DAY') return '筋トレ中心日';
+    if (dayPlan?.day_type === 'CARDIO_DAY') return '有酸素中心日';
+    if (dayPlan?.day_type === 'HYBRID_DAY') return '筋トレ＋有酸素日';
     if (dayPlan?.day_type === 'REST_DAY') return '休養日';
     return '';
   };
@@ -35,7 +40,7 @@ export default function TodayScreen() {
       <TopRightMenu />
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
-          <Text style={styles.date}>
+          <Text style={[commonStyles.title, styles.date]}>
             {today.getFullYear()}年{today.getMonth() + 1}月{today.getDate()}日({dayName})
           </Text>
           {getDayTypeLabel() && (
@@ -45,65 +50,51 @@ export default function TodayScreen() {
           )}
         </View>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>今日の食事メニュー</Text>
-        <MealPlan mealPlan={mealPlan || []} />
-      </View>
-
-      {workoutPlan && (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>今日のジムメニュー</Text>
-          <WorkoutPlan workoutPlan={workoutPlan} />
+      {dayPlan ? (
+        <View style={[commonStyles.card, styles.card]}>
+          <Text style={commonStyles.sectionTitle}>今日の食事メニュー</Text>
+          <MealPlan mealPlan={mealPlan || []} />
+          {(!mealPlan || mealPlan.length === 0) && (
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={() => router.push('/create-plan')}
+            >
+              <Text style={styles.createButtonText}>作成する</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ) : (
+        <View style={[commonStyles.card, styles.card]}>
+          <Text style={commonStyles.sectionTitle}>今日の食事メニュー</Text>
+          <Text style={styles.emptyStateText}>プラン未設定</Text>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => router.push('/create-plan')}
+          >
+            <Text style={styles.createButtonText}>作成する</Text>
+          </TouchableOpacity>
         </View>
       )}
 
-      <View style={styles.goalsCard}>
-        <Text style={styles.sectionTitle}>今日の目標</Text>
-        <View style={styles.goals}>
-          <Text style={styles.goalItem}>
-            <Text style={styles.goalLabel}>カロリー: </Text>
-            <Text style={styles.goalValue}>{dayPlan?.day_type === 'TRAINING_DAY' ? '1450-1550' : '1300'}kcal</Text>
-          </Text>
-          <Text style={styles.goalItem}>
-            <Text style={styles.goalLabel}>タンパク質: </Text>
-            <Text style={styles.goalValue}>130g</Text>
-          </Text>
-          <Text style={styles.goalItem}>
-            <Text style={styles.goalLabel}>脂質: </Text>
-            <Text style={styles.goalValue}>40g以下</Text>
-          </Text>
-          <Text style={styles.goalItem}>
-            <Text style={styles.goalLabel}>歩数: </Text>
-            <Text style={styles.goalValue}>8,000歩</Text>
-          </Text>
+      {workoutPlan && (
+        <View style={[commonStyles.card, styles.card]}>
+          <Text style={commonStyles.sectionTitle}>今日のジムメニュー</Text>
+          <WorkoutPlan workoutPlan={workoutPlan} />
         </View>
-      </View>
+      )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
+  safeArea: commonStyles.safeArea,
+  container: commonStyles.screen,
   contentContainer: {
     paddingBottom: 20,
   },
-  header: {
-    paddingTop: 16,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-  },
+  header: commonStyles.headerContainer,
   date: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
     marginBottom: 12,
   },
   dayTypeBadge: {
@@ -119,56 +110,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
     marginHorizontal: 16,
     marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 16,
+  emptyStateText: {
+    ...commonStyles.mutedText,
+    fontStyle: 'italic',
   },
-  goalsCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: '#FF6B35',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  createButton: {
+    marginTop: 14,
+    ...commonStyles.buttonPrimary,
+    paddingVertical: 12,
   },
-  goals: {
-    gap: 12,
-  },
-  goalItem: {
-    fontSize: 16,
-  },
-  goalLabel: {
-    color: '#333',
-  },
-  goalValue: {
-    color: '#FF6B35',
-    fontWeight: '600',
-  },
+  createButtonText: commonStyles.buttonPrimaryText,
 });
 

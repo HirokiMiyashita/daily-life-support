@@ -66,7 +66,6 @@ export const initializeAuth = async () => {
     if (existingUser) {
       console.log('Found existing user in database, but cannot restore anonymous session');
       // Anonymous auth doesn't support restoring sessions, so we need to create new
-      // But we'll skip seeding if data exists
     }
   }
   
@@ -94,26 +93,6 @@ export const initializeAuth = async () => {
     
     if (profileError) {
       console.error('Error creating user profile:', profileError);
-    } else {
-      // Check if seed data already exists before seeding
-      const { data: existingMealTemplates } = await supabase
-        .from('meal_templates')
-        .select('id')
-        .eq('user_id', data.user.id)
-        .limit(1);
-      
-      if (!existingMealTemplates || existingMealTemplates.length === 0) {
-        // Seed initial data only if it doesn't exist
-        console.log('No existing data found, seeding...');
-        const { error: seedError } = await supabase.rpc('seed_user_data');
-        if (seedError) {
-          console.error('Error seeding user data:', seedError);
-        } else {
-          console.log('Seed data created successfully');
-        }
-      } else {
-        console.log('Seed data already exists, skipping...');
-      }
     }
   }
   
