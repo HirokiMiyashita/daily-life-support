@@ -44,9 +44,11 @@ func BuildOnboardingStructuredPlanJSON(input llm.OnboardingPlanInput) string {
 func BuildOnboardingStructuredPlanJSONGym(input llm.OnboardingPlanInput) string {
 	return buildOnboardingStructuredPlanJSON(
 		input,
-		`- trainingMode が GYM の場合、TRAINING_DAY の各日で最低1種目はジム器具を使う種目を入れる
+		`- trainingMode が GYM の場合、TRAINING_DAY と HYBRID_DAY の各日で最低1種目はジム器具を使う種目を入れる
   （例: ベンチプレス, ラットプルダウン, ショルダープレス, レッグプレス, シーテッドロー, ダンベル種目）
-- trainingMode が GYM の場合、TRAINING_DAY を自重種目のみ（プッシュアップ/プランク/自重スクワットだけ等）で構成しない`,
+- trainingMode が GYM の場合、TRAINING_DAY / HYBRID_DAY を自重種目のみ（プッシュアップ/プランク/自重スクワットだけ等）で構成しない
+- TRAINING_DAY では cardioDurationMinutes を設定しない（null）
+- TRAINING_DAY では体幹のみ（プランク等のみ）の構成にしない`,
 		`{
   "version": "1",
   "timezone": "Asia/Tokyo",
@@ -81,10 +83,10 @@ func BuildOnboardingStructuredPlanJSONGym(input llm.OnboardingPlanInput) string 
     ]
   },
   "workoutsByDay": [
-    {"dayOfWeek":1,"dayType":"TRAINING_DAY","name":"胸・肩の日","cardioDurationMinutes":10,"cardioType":"WALK","exercises":[{"name":"ベンチプレス","targetSets":4,"targetRepsMin":8,"targetRepsMax":12,"orderIndex":0},{"name":"ショルダープレス","targetSets":3,"targetRepsMin":10,"targetRepsMax":12,"orderIndex":1}]},
+    {"dayOfWeek":1,"dayType":"TRAINING_DAY","name":"胸・肩の日","cardioDurationMinutes":null,"cardioType":null,"exercises":[{"name":"ベンチプレス","targetSets":4,"targetRepsMin":8,"targetRepsMax":12,"orderIndex":0},{"name":"ショルダープレス","targetSets":3,"targetRepsMin":10,"targetRepsMax":12,"orderIndex":1}]},
     {"dayOfWeek":2,"dayType":"CARDIO_DAY","name":"有酸素のみ","cardioDurationMinutes":35,"cardioType":"WALK","exercises":[]},
     {"dayOfWeek":3,"dayType":"TRAINING_DAY","name":"下半身の日","cardioDurationMinutes":null,"cardioType":null,"exercises":[{"name":"レッグプレス","targetSets":4,"targetRepsMin":10,"targetRepsMax":15,"orderIndex":0},{"name":"ルーマニアンデッドリフト","targetSets":3,"targetRepsMin":8,"targetRepsMax":12,"orderIndex":1}]},
-    {"dayOfWeek":4,"dayType":"HYBRID_DAY","name":"有酸素+体幹","cardioDurationMinutes":25,"cardioType":"BIKE","exercises":[{"name":"プランク","targetSets":3,"targetRepsMin":30,"targetRepsMax":45,"orderIndex":0}]},
+    {"dayOfWeek":4,"dayType":"HYBRID_DAY","name":"有酸素+上半身補助","cardioDurationMinutes":25,"cardioType":"BIKE","exercises":[{"name":"ラットプルダウン","targetSets":3,"targetRepsMin":10,"targetRepsMax":12,"orderIndex":0},{"name":"プランク","targetSets":3,"targetRepsMin":30,"targetRepsMax":45,"orderIndex":1}]},
     {"dayOfWeek":5,"dayType":"TRAINING_DAY","name":"背中・腕の日","cardioDurationMinutes":null,"cardioType":null,"exercises":[{"name":"ラットプルダウン","targetSets":4,"targetRepsMin":8,"targetRepsMax":12,"orderIndex":0},{"name":"シーテッドロー","targetSets":3,"targetRepsMin":10,"targetRepsMax":12,"orderIndex":1}]},
     {"dayOfWeek":0,"dayType":"REST_DAY","name":"休養","cardioDurationMinutes":null,"cardioType":null,"exercises":[]},
     {"dayOfWeek":6,"dayType":"REST_DAY","name":"休養","cardioDurationMinutes":null,"cardioType":null,"exercises":[]}
@@ -98,7 +100,9 @@ func BuildOnboardingStructuredPlanJSONBodyweight(input llm.OnboardingPlanInput) 
 		input,
 		`- trainingMode が BODYWEIGHT の場合、器具が必要な種目（ベンチプレス、ラットプルダウン等）は含めない
 - trainingMode が BODYWEIGHT の場合、TRAINING_DAY の各日は自重種目中心で構成する
-  （例: プッシュアップ, ブルガリアンスクワット, ヒップヒンジ, プランク, マウンテンクライマー）`,
+  （例: プッシュアップ, ブルガリアンスクワット, ヒップヒンジ, プランク, マウンテンクライマー）
+- TRAINING_DAY では cardioDurationMinutes を設定しない（null）
+- TRAINING_DAY では体幹のみ（プランク等のみ）の構成にしない`,
 		`{
   "version": "1",
   "timezone": "Asia/Tokyo",
@@ -133,10 +137,10 @@ func BuildOnboardingStructuredPlanJSONBodyweight(input llm.OnboardingPlanInput) 
     ]
   },
   "workoutsByDay": [
-    {"dayOfWeek":1,"dayType":"TRAINING_DAY","name":"上半身の日","cardioDurationMinutes":10,"cardioType":"WALK","exercises":[{"name":"プッシュアップ","targetSets":4,"targetRepsMin":10,"targetRepsMax":15,"orderIndex":0},{"name":"パイクプッシュアップ","targetSets":3,"targetRepsMin":8,"targetRepsMax":12,"orderIndex":1}]},
+    {"dayOfWeek":1,"dayType":"TRAINING_DAY","name":"上半身の日","cardioDurationMinutes":null,"cardioType":null,"exercises":[{"name":"プッシュアップ","targetSets":4,"targetRepsMin":10,"targetRepsMax":15,"orderIndex":0},{"name":"パイクプッシュアップ","targetSets":3,"targetRepsMin":8,"targetRepsMax":12,"orderIndex":1}]},
     {"dayOfWeek":2,"dayType":"CARDIO_DAY","name":"有酸素のみ","cardioDurationMinutes":35,"cardioType":"WALK","exercises":[]},
     {"dayOfWeek":3,"dayType":"TRAINING_DAY","name":"下半身の日","cardioDurationMinutes":null,"cardioType":null,"exercises":[{"name":"ブルガリアンスクワット","targetSets":4,"targetRepsMin":8,"targetRepsMax":12,"orderIndex":0},{"name":"ヒップリフト","targetSets":3,"targetRepsMin":12,"targetRepsMax":15,"orderIndex":1}]},
-    {"dayOfWeek":4,"dayType":"HYBRID_DAY","name":"有酸素+体幹","cardioDurationMinutes":25,"cardioType":"RUN","exercises":[{"name":"プランク","targetSets":3,"targetRepsMin":30,"targetRepsMax":45,"orderIndex":0}]},
+    {"dayOfWeek":4,"dayType":"HYBRID_DAY","name":"有酸素+下半身補助","cardioDurationMinutes":25,"cardioType":"RUN","exercises":[{"name":"ブルガリアンスクワット","targetSets":3,"targetRepsMin":10,"targetRepsMax":12,"orderIndex":0},{"name":"プランク","targetSets":3,"targetRepsMin":30,"targetRepsMax":45,"orderIndex":1}]},
     {"dayOfWeek":5,"dayType":"TRAINING_DAY","name":"全身の日","cardioDurationMinutes":null,"cardioType":null,"exercises":[{"name":"ジャンプスクワット","targetSets":4,"targetRepsMin":10,"targetRepsMax":15,"orderIndex":0},{"name":"マウンテンクライマー","targetSets":3,"targetRepsMin":20,"targetRepsMax":30,"orderIndex":1}]},
     {"dayOfWeek":0,"dayType":"REST_DAY","name":"休養","cardioDurationMinutes":null,"cardioType":null,"exercises":[]},
     {"dayOfWeek":6,"dayType":"REST_DAY","name":"休養","cardioDurationMinutes":null,"cardioType":null,"exercises":[]}
@@ -169,6 +173,8 @@ func buildOnboardingStructuredPlanJSON(input llm.OnboardingPlanInput, modeSpecif
 - workoutsByDay の dayOfWeek は重複禁止
 - TRAINING_DAY / CARDIO_DAY / HYBRID_DAY の mealsByDayType には POST_WORKOUT を必ず1つ以上含める
 - TRAINING_DAY / CARDIO_DAY / HYBRID_DAY の mealsByDayType には BREAKFAST / LUNCH / SNACK / POST_WORKOUT / DINNER を必ずすべて含める
+- TRAINING_DAY の workoutsByDay は cardioDurationMinutes を必ず null にする
+- TRAINING_DAY の exercises は「体幹のみ（プランク等のみ）」にしない
 - HYBRID_DAY は「有酸素+筋トレ」の日として扱い、workoutsByDay で cardioDurationMinutes と exercises の両方を設定する
 - REST_DAY の mealsByDayType は空配列にしない（最低でも BREAKFAST / LUNCH / DINNER を含める）
 - mealsByDayType では同じ mealType を複数返してよい（例: BREAKFASTを2セット以上）

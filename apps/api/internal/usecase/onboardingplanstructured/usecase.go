@@ -72,7 +72,7 @@ func (u *usecase) Execute(ctx context.Context, input llm.OnboardingPlanInput) (*
 	}
 	log.Printf("onboarding structured plan generated: model=%s message_chars=%d", result.Model, len(result.Message))
 
-	parsed, parseErr := parseAndValidateStructuredPlan(result.Message)
+	parsed, parseErr := parseAndValidateStructuredPlan(result.Message, input.TrainingMode)
 	if parseErr == nil {
 		log.Printf("onboarding structured plan parsed and validated successfully")
 		return parsed, nil
@@ -97,7 +97,7 @@ func (u *usecase) Execute(ctx context.Context, input llm.OnboardingPlanInput) (*
 	}
 	log.Printf("onboarding structured plan retry generated: model=%s message_chars=%d", retryResult.Model, len(retryResult.Message))
 
-	retryParsed, retryParseErr := parseAndValidateStructuredPlan(retryResult.Message)
+	retryParsed, retryParseErr := parseAndValidateStructuredPlan(retryResult.Message, input.TrainingMode)
 	if retryParseErr != nil {
 		log.Printf("onboarding structured plan retry parse/validate failed: %v", retryParseErr)
 		return nil, retryParseErr
@@ -106,7 +106,7 @@ func (u *usecase) Execute(ctx context.Context, input llm.OnboardingPlanInput) (*
 	return retryParsed, nil
 }
 
-func parseAndValidateStructuredPlan(rawMessage string) (*llm.OnboardingStructuredPlanOutput, error) {
+func parseAndValidateStructuredPlan(rawMessage string, trainingMode string) (*llm.OnboardingStructuredPlanOutput, error) {
 	raw := strings.TrimSpace(rawMessage)
 	raw = strings.TrimPrefix(raw, "```json")
 	raw = strings.TrimPrefix(raw, "```")
@@ -117,13 +117,13 @@ func parseAndValidateStructuredPlan(rawMessage string) (*llm.OnboardingStructure
 	if err := json.Unmarshal([]byte(raw), &parsed); err != nil {
 		return nil, errors.New("failed to parse structured onboarding plan json: " + err.Error())
 	}
-	if err := validateStructuredPlan(&parsed); err != nil {
+	if err := validateStructuredPlan(&parsed, trainingMode); err != nil {
 		return nil, errors.New("structured onboarding plan validation failed: " + err.Error())
 	}
 	return &parsed, nil
 }
 
-func validateStructuredPlan(plan *llm.OnboardingStructuredPlanOutput) error {
+func validateStructuredPlan(plan *llm.OnboardingStructuredPlanOutput, trainingMode string) error {
 	if plan == nil {
 		return errors.New("plan is nil")
 	}
@@ -201,16 +201,80 @@ func validateStructuredPlan(plan *llm.OnboardingStructuredPlanOutput) error {
 		if workout.DayType != day.DayType {
 			return fmt.Errorf("workoutsByDay dayType mismatch at dayOfWeek %d", day.DayOfWeek)
 		}
-		if day.DayType == llm.DayTypeTraining && len(workout.Exercises) == 0 {
-			return fmt.Errorf("training day %d must include at least one exercise", day.DayOfWeek)
+		if day.DayType == llm.DayTypeTraining {
+			if workout.CardioDurationMinute != nil {
+				return fmt.Errorf("training day %d must not include cardio duration", day.DayOfWeek)
+			}
+			if len(workout.Exercises) == 0 {
+				return fmt.Errorf("training day %d must include at least one exercise", day.DayOfWeek)
+			}
+			if isCoreOnlyWorkout(workout.Exercises) {
+				return fmt.Errorf("training day %d must include resistance exercise beyond core-only workout", day.DayOfWeek)
+			}
+			if trainingMode == "GYM" && !hasGymStyleExercise(workout.Exercises) {
+				return fmt.Errorf("training day %d must include at least one gym-style exercise for GYM mode", day.DayOfWeek)
+			}
 		}
 		if day.DayType == llm.DayTypeCardio && workout.CardioDurationMinute == nil && len(workout.Exercises) == 0 {
 			return fmt.Errorf("cardio day %d must include cardio duration or exercises", day.DayOfWeek)
 		}
-		if day.DayType == llm.DayTypeHybrid && (workout.CardioDurationMinute == nil || len(workout.Exercises) == 0) {
-			return fmt.Errorf("hybrid day %d must include cardio duration and exercises", day.DayOfWeek)
+		if day.DayType == llm.DayTypeHybrid {
+			if workout.CardioDurationMinute == nil || len(workout.Exercises) == 0 {
+				return fmt.Errorf("hybrid day %d must include cardio duration and exercises", day.DayOfWeek)
+			}
+			if isCoreOnlyWorkout(workout.Exercises) {
+				return fmt.Errorf("hybrid day %d must include resistance exercise beyond core-only workout", day.DayOfWeek)
+			}
+			if trainingMode == "GYM" && !hasGymStyleExercise(workout.Exercises) {
+				return fmt.Errorf("hybrid day %d must include at least one gym-style exercise for GYM mode", day.DayOfWeek)
+			}
 		}
 	}
 
 	return nil
+}
+
+func isCoreOnlyWorkout(exercises []llm.WorkoutExercisePlan) bool {
+	if len(exercises) == 0 {
+		return false
+	}
+
+	coreKeywords := []string{
+		"プランク", "サイドプランク", "クランチ", "レッグレイズ", "体幹",
+		"plank", "crunch", "dead bug", "hollow hold", "core",
+	}
+
+	for _, ex := range exercises {
+		name := strings.ToLower(strings.TrimSpace(ex.Name))
+		isCore := false
+		for _, keyword := range coreKeywords {
+			if strings.Contains(name, strings.ToLower(keyword)) {
+				isCore = true
+				break
+			}
+		}
+		if !isCore {
+			return false
+		}
+	}
+	return true
+}
+
+func hasGymStyleExercise(exercises []llm.WorkoutExercisePlan) bool {
+	gymKeywords := []string{
+		"ベンチプレス", "ラットプルダウン", "レッグプレス", "シーテッドロー", "ショルダープレス",
+		"ダンベル", "バーベル", "ケーブル", "マシン", "スミスマシン",
+		"bench press", "lat pulldown", "leg press", "seated row", "shoulder press",
+		"dumbbell", "barbell", "cable", "machine", "smith",
+	}
+
+	for _, ex := range exercises {
+		name := strings.ToLower(strings.TrimSpace(ex.Name))
+		for _, keyword := range gymKeywords {
+			if strings.Contains(name, strings.ToLower(keyword)) {
+				return true
+			}
+		}
+	}
+	return false
 }
