@@ -46,7 +46,6 @@ export function useDailyLog(date: string) {
   const updateMutation = useMutation({
     mutationFn: async (updates: {
       weight?: number;
-      waist?: number;
       steps?: number;
       sleep_hours?: number;
       notes?: string;

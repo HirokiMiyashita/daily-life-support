@@ -89,6 +89,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111',
     marginBottom: 8,
+    marginTop: 8,
   },
   section: { gap: 10 },
 });

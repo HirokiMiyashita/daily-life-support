@@ -55,6 +55,15 @@ export type DeleteV1LlmOnboardingPlanDraft200 = {[key: string]: string};
 
 export type PostV1LlmOnboardingPlanStructured200 = { [key: string]: unknown };
 
+export interface LlmExerciseReferenceVideoInput {
+  exerciseName?: string;
+}
+
+export interface LlmExerciseReferenceVideoOutput {
+  title?: string;
+  youtubeUrl?: string;
+}
+
 /**
  * APIのヘルスチェック
  * @summary Health check
@@ -435,5 +444,49 @@ export const postV1LlmOnboardingPlanStructured = async (llmOnboardingPlanInput: 
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       llmOnboardingPlanInput,)
+  }
+);}
+
+
+/**
+ * 種目名から日本語向けのYouTube参考動画を1件返す
+ * @summary Exercise reference video
+ */
+export type postV1LlmExerciseReferenceVideoResponse200 = {
+  data: LlmExerciseReferenceVideoOutput
+  status: 200
+}
+
+export type postV1LlmExerciseReferenceVideoResponse400 = {
+  data: HttphandlerErrorResponse
+  status: 400
+}
+
+export type postV1LlmExerciseReferenceVideoResponse502 = {
+  data: HttphandlerErrorResponse
+  status: 502
+}
+
+export type postV1LlmExerciseReferenceVideoResponseSuccess = (postV1LlmExerciseReferenceVideoResponse200) & {
+  headers: Headers;
+};
+export type postV1LlmExerciseReferenceVideoResponseError = (postV1LlmExerciseReferenceVideoResponse400 | postV1LlmExerciseReferenceVideoResponse502) & {
+  headers: Headers;
+};
+
+export type postV1LlmExerciseReferenceVideoResponse = (postV1LlmExerciseReferenceVideoResponseSuccess | postV1LlmExerciseReferenceVideoResponseError)
+
+export const getPostV1LlmExerciseReferenceVideoUrl = () => {
+  return `/v1/llm/exercise-reference-video`
+}
+
+export const postV1LlmExerciseReferenceVideo = async (llmExerciseReferenceVideoInput: LlmExerciseReferenceVideoInput, options?: RequestInit): Promise<postV1LlmExerciseReferenceVideoResponse> => {
+  return llmFetcher<postV1LlmExerciseReferenceVideoResponse>(getPostV1LlmExerciseReferenceVideoUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      llmExerciseReferenceVideoInput,)
   }
 );}

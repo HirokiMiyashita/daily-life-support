@@ -109,3 +109,12 @@ type OnboardingPlanDraftOutput struct {
 	Message string                         `json:"message"`
 	Plan    OnboardingStructuredPlanOutput `json:"plan"`
 }
+
+type ExerciseReferenceVideoInput struct {
+	ExerciseName string `json:"exerciseName"`
+}
+
+type ExerciseReferenceVideoOutput struct {
+	Title      string `json:"title"`
+	YouTubeURL string `json:"youtubeUrl"`
+}

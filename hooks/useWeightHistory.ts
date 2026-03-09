@@ -14,7 +14,7 @@ export function useWeightHistory(days: number = 30) {
       // This ensures we don't miss any data due to date calculation issues
       const { data: logs, error } = await supabase
         .from('daily_logs')
-        .select('date, weight, waist')
+        .select('date, weight')
         .eq('user_id', user.id)
         .order('date', { ascending: false });
 

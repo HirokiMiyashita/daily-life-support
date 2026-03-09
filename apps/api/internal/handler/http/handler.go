@@ -3,14 +3,13 @@ package httphandler
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"daily-life-support/apps/api/internal/llm"
 	chatusecase "daily-life-support/apps/api/internal/usecase/chat"
-	onboardingplanusecase "daily-life-support/apps/api/internal/usecase/onboardingplan"
+	exercisereferencevideousecase "daily-life-support/apps/api/internal/usecase/exercisereferencevideo"
 	onboardingplanapplyusecase "daily-life-support/apps/api/internal/usecase/onboardingplanapply"
 	onboardingplandraftusecase "daily-life-support/apps/api/internal/usecase/onboardingplandraft"
 	onboardingplanstructuredusecase "daily-life-support/apps/api/internal/usecase/onboardingplanstructured"
@@ -20,9 +19,9 @@ import (
 
 type Handler struct {
 	chatUsecase                     chatusecase.Usecase
+	exerciseReferenceVideoUsecase   exercisereferencevideousecase.Usecase
 	onboardingPlanDraftUsecase      onboardingplandraftusecase.Usecase
 	onboardingPlanApplyUsecase      onboardingplanapplyusecase.Usecase
-	onboardingPlanUsecase           onboardingplanusecase.Usecase
 	onboardingPlanStructuredUsecase onboardingplanstructuredusecase.Usecase
 	userProfileUsecase              userprofileusecase.Usecase
 }
@@ -33,17 +32,17 @@ type ErrorResponse struct {
 
 func New(
 	chatUsecase chatusecase.Usecase,
+	exerciseReferenceVideoUsecase exercisereferencevideousecase.Usecase,
 	onboardingPlanDraftUsecase onboardingplandraftusecase.Usecase,
 	onboardingPlanApplyUsecase onboardingplanapplyusecase.Usecase,
-	onboardingPlanUsecase onboardingplanusecase.Usecase,
 	onboardingPlanStructuredUsecase onboardingplanstructuredusecase.Usecase,
 	userProfileUsecase userprofileusecase.Usecase,
 ) *Handler {
 	return &Handler{
 		chatUsecase:                     chatUsecase,
+		exerciseReferenceVideoUsecase:   exerciseReferenceVideoUsecase,
 		onboardingPlanDraftUsecase:      onboardingPlanDraftUsecase,
 		onboardingPlanApplyUsecase:      onboardingPlanApplyUsecase,
-		onboardingPlanUsecase:           onboardingPlanUsecase,
 		onboardingPlanStructuredUsecase: onboardingPlanStructuredUsecase,
 		userProfileUsecase:              userProfileUsecase,
 	}
@@ -223,44 +222,41 @@ func (h *Handler) Chat(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, result)
 }
 
-// OnboardingPlan godoc
-// @Summary Onboarding suggestion
-// @Description オンボーディング入力値からAI提案を生成
+// ExerciseReferenceVideo godoc
+// @Summary Exercise reference video
+// @Description 種目名から日本語向けのYouTube参考動画を1件返す
 // @Tags llm
 // @Accept json
 // @Produce json
-// @Param request body llm.OnboardingPlanInput true "Onboarding plan request"
-// @Success 200 {object} llm.ChatOutput
+// @Param request body llm.ExerciseReferenceVideoInput true "Exercise reference video request"
+// @Success 200 {object} llm.ExerciseReferenceVideoOutput
 // @Failure 400 {object} ErrorResponse
 // @Failure 502 {object} ErrorResponse
-// @Router /v1/llm/onboarding-plan [post]
-func (h *Handler) OnboardingPlan(w http.ResponseWriter, r *http.Request) {
+// @Router /v1/llm/exercise-reference-video [post]
+func (h *Handler) ExerciseReferenceVideo(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
-	var req llm.OnboardingPlanInput
+	var req llm.ExerciseReferenceVideoInput
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid json body")
 		return
 	}
 
-	log.Printf("onboarding req: %+v", req)
-
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 
-	result, err := h.onboardingPlanUsecase.Execute(ctx, req)
+	result, err := h.exerciseReferenceVideoUsecase.Execute(ctx, req)
 	if err != nil {
 		status := http.StatusBadGateway
-		switch err.Error() {
-		case "OPENAI_API_KEY is not configured",
-			"weight, height and targetWeight must be positive",
-			"targetDurationValue must be positive",
-			"targetDurationUnit must be week or month",
-			"occupation is required",
-			"trainingMode must be GYM or BODYWEIGHT":
+		switch {
+		case strings.Contains(err.Error(), "OPENAI_API_KEY is not configured"),
+			strings.Contains(err.Error(), "exerciseName is required"),
+			strings.Contains(err.Error(), "failed to parse exercise reference video json"),
+			strings.Contains(err.Error(), "youtube url"),
+			strings.Contains(err.Error(), "invalid youtube video id"):
 			status = http.StatusBadRequest
 		}
 		writeError(w, status, err.Error())

@@ -1,0 +1,2 @@
+ALTER TABLE daily_logs
+DROP COLUMN IF EXISTS waist;

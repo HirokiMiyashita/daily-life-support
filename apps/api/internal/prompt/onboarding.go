@@ -6,34 +6,6 @@ import (
 	"daily-life-support/apps/api/internal/llm"
 )
 
-func BuildOnboardingSuggestion(input llm.OnboardingPlanInput) string {
-	return fmt.Sprintf(
-		`あなたは減量コーチです。以下の条件で、今日から始める実行しやすい提案を日本語で作成してください。
-
-条件:
-- 体重: %.1fkg
-- 身長: %.1fcm
-- 目標体重: %.1fkg
-- 達成希望期間: %d%s
-- 仕事: %s
-- トレーニング環境: %s
-
-出力ルール:
-1. 「最初の2週間でやること」を箇条書きで3つ
-2. 「1日の食事方針」を箇条書きで3つ
-3. 「週の運動方針」を箇条書きで3つ
-4. 最後に短い励ましを1文
-5. 全体は簡潔に`,
-		input.WeightKg,
-		input.HeightCm,
-		input.TargetWeightKg,
-		input.TargetDurationValue,
-		durationLabel(input.TargetDurationUnit),
-		input.Occupation,
-		trainingModeLabel(input.TrainingMode),
-	)
-}
-
 func BuildOnboardingStructuredPlanJSON(input llm.OnboardingPlanInput) string {
 	if input.TrainingMode == "BODYWEIGHT" {
 		return BuildOnboardingStructuredPlanJSONBodyweight(input)

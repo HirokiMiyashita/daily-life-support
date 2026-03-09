@@ -11,14 +11,10 @@ export default function LogsScreen() {
   const { data: dailyLog, isLoading, updateLog } = useDailyLog(today);
   const { data: weightHistory, isLoading: historyLoading } = useWeightHistory(30);
   const [weight, setWeight] = useState('');
-  const [waist, setWaist] = useState('');
 
   useEffect(() => {
     if (dailyLog?.weight) {
       setWeight(dailyLog.weight.toString());
-    }
-    if (dailyLog?.waist) {
-      setWaist(dailyLog.waist.toString());
     }
   }, [dailyLog]);
 
@@ -31,17 +27,6 @@ export default function LogsScreen() {
 
     await updateLog({ weight: weightNum });
     Alert.alert('成功', '体重を記録しました');
-  };
-
-  const handleSaveWaist = async () => {
-    const waistNum = parseFloat(waist);
-    if (isNaN(waistNum) || waistNum <= 0) {
-      Alert.alert('エラー', '正しいウエストを入力してください');
-      return;
-    }
-
-    await updateLog({ waist: waistNum });
-    Alert.alert('成功', 'ウエストを記録しました');
   };
 
   if (isLoading || historyLoading) {
@@ -74,23 +59,6 @@ export default function LogsScreen() {
         )}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>ウエスト（週1）</Text>
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="ウエスト (cm)"
-            value={waist}
-            onChangeText={setWaist}
-            keyboardType="decimal-pad"
-          />
-          <Button title="保存" onPress={handleSaveWaist} />
-        </View>
-        {dailyLog?.waist && (
-          <Text style={styles.currentValue}>現在: {dailyLog.waist} cm</Text>
-        )}
-      </View>
-
       {weightHistory?.average7Days && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>7日平均</Text>
@@ -111,9 +79,6 @@ export default function LogsScreen() {
               <View key={log.date} style={styles.historyItem}>
                 <Text style={styles.historyDate}>{formatDate(log.date)}</Text>
                 <Text style={styles.historyWeight}>{log.weight} kg</Text>
-                {log.waist && (
-                  <Text style={styles.historyWaist}>ウエスト: {log.waist} cm</Text>
-                )}
               </View>
             ))}
           </View>
@@ -199,10 +164,6 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
     marginRight: 12,
-  },
-  historyWaist: {
-    fontSize: 14,
-    color: '#999',
   },
   emptyText: {
     fontSize: 16,

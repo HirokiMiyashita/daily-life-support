@@ -52,6 +52,8 @@ export const commonStyles = {
   subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
+    marginTop: 8,
+    marginBottom: 8,
   },
   sectionTitle: {
     fontSize: 20,
@@ -90,6 +92,7 @@ export const commonStyles = {
     fontSize: 15,
     color: '#333',
     fontWeight: '500' as const,
+    marginTop: 8,
   },
   choiceTextActive: {
     color: colors.accent,

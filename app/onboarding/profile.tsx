@@ -183,7 +183,7 @@ export default function OnboardingProfileScreen() {
         <ScrollView style={styles.scroll} contentContainerStyle={commonStyles.scrollContent}>
           <OnboardingStepper currentStep={2} setupMode="AI" />
           <Text style={styles.title}>基本情報を入力</Text>
-          <Text style={commonStyles.subtitle}>入力内容を元にAIがプランを作成します。</Text>
+          <Text style={[commonStyles.subtitle, styles.subtitle]}>入力内容を元にAIがプランを作成します。</Text>
 
           <TextInput
             style={styles.input}
@@ -425,14 +425,17 @@ const styles = StyleSheet.create({
     color: '#111',
     marginBottom: 8,
   },
+  subtitle: {
+    marginBottom: 14,
+  },
   input: {
     ...commonStyles.input,
-    marginBottom: 10,
+    marginBottom: 14,
   },
-  durationRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  durationRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 14 },
   durationInput: { flex: 1, marginBottom: 0 },
   unitToggle: { flexDirection: 'row', gap: 8 },
-  trainingModeRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  trainingModeRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   trainingModeButton: { flex: 1, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 12 },
   unitButton: {
     borderRadius: 10,
@@ -440,11 +443,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   suggestionCard: {
-    marginTop: 16,
+    marginTop: 20,
   },
-  previewButton: { marginTop: 10 },
+  previewButton: { marginTop: 12 },
   suggestionTitle: { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 6 },
-  suggestionBody: { fontSize: 14, lineHeight: 20, color: '#374151' },
+  suggestionBody: { fontSize: 14, lineHeight: 22, color: '#374151' },
   actionButton: { flex: 1 },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -494,7 +497,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   modalCloseText: {
     color: '#ef6b3b',
@@ -504,7 +507,7 @@ const styles = StyleSheet.create({
   previewStepRow: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   previewStepChip: {
     flex: 1,
@@ -527,18 +530,18 @@ const styles = StyleSheet.create({
   previewStepChipTextActive: {
     color: '#ef6b3b',
   },
-  modalContent: { paddingBottom: 12 },
-  modalSection: { marginBottom: 14 },
-  modalSectionTitle: { fontSize: 15, fontWeight: '700', color: '#111827', marginBottom: 6 },
-  modalGroup: { marginBottom: 8 },
-  modalGroupTitle: { fontSize: 14, fontWeight: '700', color: '#374151', marginBottom: 4 },
+  modalContent: { paddingBottom: 16 },
+  modalSection: { marginBottom: 18 },
+  modalSectionTitle: { fontSize: 15, fontWeight: '700', color: '#111827', marginBottom: 8 },
+  modalGroup: { marginBottom: 12 },
+  modalGroupTitle: { fontSize: 14, fontWeight: '700', color: '#374151', marginBottom: 6 },
   modalSubGroup: { marginBottom: 4 },
   dayCard: {
     borderWidth: 1,
     borderColor: '#e5e7eb',
     borderRadius: 10,
     padding: 10,
-    marginBottom: 8,
+    marginBottom: 10,
     backgroundColor: '#f9fafb',
   },
   dayCardTitle: { fontSize: 13, fontWeight: '700', color: '#111827' },
@@ -548,16 +551,16 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
     borderRadius: 10,
     padding: 10,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   mealCardTitle: { fontSize: 13, fontWeight: '700', color: '#111827' },
-  mealCardType: { fontSize: 12, color: '#ef6b3b', marginBottom: 4, fontWeight: '700' },
+  mealCardType: { fontSize: 12, color: '#ef6b3b', marginBottom: 6, fontWeight: '700' },
   workoutCard: {
     borderWidth: 1,
     borderColor: '#e5e7eb',
     borderRadius: 10,
     padding: 10,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   modalText: { fontSize: 13, color: '#374151', lineHeight: 20 },
   modalSubText: { fontSize: 13, color: '#4b5563', lineHeight: 20, paddingLeft: 8 },

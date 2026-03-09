@@ -135,7 +135,6 @@ export interface Database {
           day_plan_id: string | null;
           date: string;
           weight: number | null;
-          waist: number | null;
           steps: number | null;
           sleep_hours: number | null;
           notes: string | null;
@@ -148,7 +147,6 @@ export interface Database {
           day_plan_id?: string | null;
           date: string;
           weight?: number | null;
-          waist?: number | null;
           steps?: number | null;
           sleep_hours?: number | null;
           notes?: string | null;
@@ -161,7 +159,6 @@ export interface Database {
           day_plan_id?: string | null;
           date?: string;
           weight?: number | null;
-          waist?: number | null;
           steps?: number | null;
           sleep_hours?: number | null;
           notes?: string | null;
@@ -302,67 +299,6 @@ export interface Database {
           name?: string;
           category?: 'PROTEIN' | 'VEGETABLE' | 'CARB' | 'OTHER';
           default_unit?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      shopping_lists: {
-        Row: {
-          id: string;
-          user_id: string;
-          week_start_date: string;
-          week_end_date: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          week_start_date: string;
-          week_end_date: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          week_start_date?: string;
-          week_end_date?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      shopping_list_items: {
-        Row: {
-          id: string;
-          user_id: string;
-          shopping_list_id: string;
-          ingredient_id: string;
-          quantity: number;
-          unit: string;
-          purchased: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          shopping_list_id: string;
-          ingredient_id: string;
-          quantity: number;
-          unit: string;
-          purchased?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          shopping_list_id?: string;
-          ingredient_id?: string;
-          quantity?: number;
-          unit?: string;
-          purchased?: boolean;
           created_at?: string;
           updated_at?: string;
         };

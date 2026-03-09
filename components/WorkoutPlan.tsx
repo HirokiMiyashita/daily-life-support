@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 interface ExerciseTemplate {
   id: string;
@@ -24,9 +24,10 @@ interface WorkoutPlanProps {
     cardio_type: string | null;
     workout_plan_exercises: WorkoutPlanExercise[];
   };
+  onPressReference?: (exerciseName: string) => void;
 }
 
-export function WorkoutPlan({ workoutPlan }: WorkoutPlanProps) {
+export function WorkoutPlan({ workoutPlan, onPressReference }: WorkoutPlanProps) {
   const orderedExercises = [...(workoutPlan.workout_plan_exercises || [])].sort(
     (a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)
   );
@@ -46,7 +47,17 @@ export function WorkoutPlan({ workoutPlan }: WorkoutPlanProps) {
             
             return (
               <View key={`${exercise.id}-${exercisePlan.order_index}`} style={styles.exerciseItem}>
-                <Text style={styles.exerciseName}>{exercise.name}</Text>
+                <View style={styles.exerciseHeaderRow}>
+                  <Text style={styles.exerciseName}>{exercise.name}</Text>
+                  {!!onPressReference && (
+                    <TouchableOpacity
+                      style={styles.referenceButton}
+                      onPress={() => onPressReference(exercise.name)}
+                    >
+                      <Text style={styles.referenceButtonText}>参考</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
                 <Text style={styles.exerciseDetails}>
                   {targetSets ?? '-'}セット × {repsText}
                 </Text>
@@ -78,10 +89,28 @@ const styles = StyleSheet.create({
   exerciseItem: {
     gap: 4,
   },
+  exerciseHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+  },
   exerciseName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#000',
+  },
+  referenceButton: {
+    borderWidth: 1,
+    borderColor: '#FF6B35',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  referenceButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FF6B35',
   },
   exerciseDetails: {
     fontSize: 14,

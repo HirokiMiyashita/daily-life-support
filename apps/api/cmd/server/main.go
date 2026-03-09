@@ -17,7 +17,7 @@ import (
 	onboardingplandraftservice "daily-life-support/apps/api/internal/service/onboardingplandraft"
 	userprofileservice "daily-life-support/apps/api/internal/service/userprofile"
 	chatusecase "daily-life-support/apps/api/internal/usecase/chat"
-	onboardingplanusecase "daily-life-support/apps/api/internal/usecase/onboardingplan"
+	exercisereferencevideousecase "daily-life-support/apps/api/internal/usecase/exercisereferencevideo"
 	onboardingplanapplyusecase "daily-life-support/apps/api/internal/usecase/onboardingplanapply"
 	onboardingplandraftusecase "daily-life-support/apps/api/internal/usecase/onboardingplandraft"
 	onboardingplanstructuredusecase "daily-life-support/apps/api/internal/usecase/onboardingplanstructured"
@@ -35,7 +35,7 @@ func main() {
 	openAIRepo := openai.NewClient(cfg.OpenAIBaseURL, cfg.OpenAIAPIKey)
 	chatService := llmservice.New(openAIRepo)
 	chatUsecase := chatusecase.New(chatService, cfg.DefaultModel, cfg.OpenAIAPIKey != "")
-	onboardingUsecase := onboardingplanusecase.New(chatService, cfg.DefaultModel, cfg.OpenAIAPIKey != "")
+	exerciseReferenceVideoUsecase := exercisereferencevideousecase.New(chatService, cfg.DefaultModel, cfg.OpenAIAPIKey != "")
 	onboardingStructuredUsecase := onboardingplanstructuredusecase.New(chatService, cfg.DefaultModel, cfg.OpenAIAPIKey != "")
 	supabaseRepo := supabaserepository.NewClient(cfg.SupabaseURL, cfg.SupabaseAnonKey, cfg.SupabaseServiceRoleKey)
 	onboardingPlanDraftService := onboardingplandraftservice.New(supabaseRepo)
@@ -52,11 +52,12 @@ func main() {
 	)
 	userProfileService := userprofileservice.New(supabaseRepo)
 	userProfileUsecase := userprofileusecase.New(userProfileService, cfg.SupabaseURL != "" && cfg.SupabaseAnonKey != "" && cfg.SupabaseServiceRoleKey != "")
-	handler := httphandler.New(chatUsecase, onboardingPlanDraftUsecase, onboardingPlanApplyUsecase, onboardingUsecase, onboardingStructuredUsecase, userProfileUsecase)
+	handler := httphandler.New(chatUsecase, exerciseReferenceVideoUsecase, onboardingPlanDraftUsecase, onboardingPlanApplyUsecase, onboardingStructuredUsecase, userProfileUsecase)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", handler.Health)
 	mux.Handle("/v1/llm/chat", middleware.WithCORS(http.HandlerFunc(handler.Chat)))
+	mux.Handle("/v1/llm/exercise-reference-video", middleware.WithCORS(http.HandlerFunc(handler.ExerciseReferenceVideo)))
 	mux.Handle("/v1/llm/onboarding-plan-draft", middleware.WithCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodDelete {
 			handler.DeleteOnboardingPlanDraft(w, r)
@@ -66,7 +67,6 @@ func main() {
 	})))
 	mux.Handle("/v1/llm/onboarding-plan-draft/apply", middleware.WithCORS(http.HandlerFunc(handler.ApplyOnboardingPlanDraft)))
 	mux.Handle("/v1/llm/onboarding-plan-apply", middleware.WithCORS(http.HandlerFunc(handler.OnboardingPlanApply)))
-	mux.Handle("/v1/llm/onboarding-plan", middleware.WithCORS(http.HandlerFunc(handler.OnboardingPlan)))
 	mux.Handle("/v1/llm/onboarding-plan-structured", middleware.WithCORS(http.HandlerFunc(handler.OnboardingPlanStructured)))
 	mux.Handle("/v1/users/profile", middleware.WithCORS(http.HandlerFunc(handler.UpsertUserProfile)))
 	mux.Handle("/swagger/", httpSwagger.WrapHandler)
